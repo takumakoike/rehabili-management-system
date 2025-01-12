@@ -2,7 +2,7 @@ import { HeaderComponents } from "../components/Headers"
 import * as React from "react"
  
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TabContentInfo } from "./tabcomponents/tabInfo"
+import { TabContentInfo } from "../components/tabcomponents/tabInfo"
 import {
     Table,
     TableBody,
