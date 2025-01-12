@@ -1,5 +1,5 @@
 import { Database } from "sqlite3";
-import path from "path";
+import path, { resolve } from "path";
 import { NextRequest, NextResponse } from "next/server";
 
 // SQLiteデータベースを設定
@@ -9,6 +9,7 @@ const db = new Database(dbPath);
 // 初回起動時にテーブルを作成
 db.serialize(() => {
     db.run(`
+        
         
         `)
 });
@@ -39,4 +40,14 @@ export async function POST(request:NextRequest) {
 
     // 取得した内容をJSONオブジェクトにして定数に渡す
     const {} = await request.json();
+    return new Promise<Response>((resolve, reject) => {
+        db.run("", [], 
+            function (err) {
+                if(err){
+                    reject(new Response(JSON.stringify({error: "データベースエラー"}), {status: 500}))
+                } else {
+                    resolve(new Response(JSON.stringify({}), {status: 201, headers: {"Content-Type": "application/json"}}))
+                }
+        })
+    })
 }
