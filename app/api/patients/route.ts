@@ -1,6 +1,6 @@
 import { Database } from "sqlite3";
-import path, { resolve } from "path";
-import { NextRequest, NextResponse } from "next/server";
+import path from "path";
+import { NextRequest } from "next/server";
 
 // SQLiteデータベースを設定
 const dbPath = path.resolve(process.cwd(), "database.sqlite");
@@ -9,9 +9,21 @@ const db = new Database(dbPath);
 // 初回起動時にテーブルを作成
 db.serialize(() => {
     db.run(`
-        
-        
-        `)
+        CREATE TABLE IF NOT EXISTS patients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patientname TEXT NOT NULL,
+            affectedside TEXT NOT NULL,
+            affectedpart TEXT NOT NULL,
+            diagnosis TEXT NOT NULL
+        )
+        `, (err) => {
+            if(err) {
+                console.error(`テーブル作成時にエラーが起きました：${err}`)
+
+            } else {
+                console.log("患者テーブルの作成に成功しました")
+        }
+    })
 });
 
 // GET関数でクライアントからのリクエストを処理
@@ -39,14 +51,22 @@ export async function POST(request:NextRequest) {
     console.log(request.body);
 
     // 取得した内容をJSONオブジェクトにして定数に渡す
-    const {} = await request.json();
+    const {patientname, affectedside, affectedpart, diagnosis} = await request.json();
     return new Promise<Response>((resolve, reject) => {
-        db.run("", [], 
+        db.run(
+            'INSERT INTO patients (patientname, affectedside, affectedpart, diagnosis) VALUES (?, ?, ?, ?)',
+            [patientname, affectedside, affectedpart, diagnosis], 
             function (err) {
                 if(err){
                     reject(new Response(JSON.stringify({error: "データベースエラー"}), {status: 500}))
                 } else {
-                    resolve(new Response(JSON.stringify({}), {status: 201, headers: {"Content-Type": "application/json"}}))
+                    resolve(new Response(JSON.stringify({
+                        id: this.lastID,
+                        patientname, 
+                        affectedside, 
+                        affectedpart, 
+                        diagnosis
+                    }), {status: 201, headers: {"Content-Type": "application/json"}}))
                 }
         })
     })
