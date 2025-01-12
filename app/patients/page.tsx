@@ -203,57 +203,55 @@ export default function PatientView(){
                                                     />
                                             </div>
                                         </div>
-                                    <Button className="mt-8 w-full bg-blue-500 font-bold py-7" type="submit">登録</Button>
+                                    <Button className="mt-8 w-full bg-blue-500 font-bold py-4" type="submit">登録</Button>
                                 </form>
                             </CardContent>
-                            <CardFooter className="flex justify-between">
-                                <Button className="w-full bg-purple-500">編集</Button>
-                            </CardFooter>
                         </Card>
+                        <div className="flex flex-col items-center gap-5 mt-10 ">
+                            <div className="p-6 bg-gray-300 w-[600px] rounded">
+                                <h2 className="text-center font-bold bg-gray-50 py-2">登録患者一覧</h2>
+                                <Table>
+                                    <TableCaption>患者が登録されていません</TableCaption>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[80px] text-center">患者ID</TableHead>
+                                            <TableHead className="w-[100px]">患者氏名</TableHead>
+                                            <TableHead colSpan={2}>診断</TableHead>
+                                            {/* <TableHead className="text-right">編集</TableHead> */}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                            {/* ここでmapメソッドで出力 */}
+                                            { patients.map( (patient) => (
+                                        <TableRow key={patient.id}>
+                                            <TableCell className="patient-id text-center">{patient.id}</TableCell>
+                                            <TableCell className="patient-name">{patient.patientname}</TableCell>
+                                            <TableCell className="patient-diagnosis">
+                                                {patient.affectedside}
+                                                {patient.affectedpart}
+                                                {patient.diagnosis}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button 
+                                                className="bg-red-600 text-white rounded px-5 py-2 font-bold"
+                                                onClick={() => confirmDelete(patient.id)}
+                                                >
+                                                削除</Button>
+                                            </TableCell>
+                                        </TableRow>
+                                            ))}
+                                    </TableBody>
+                                    </Table>
+
+                            </div>
+                        </div>
                     </TabsContent>
                     <TabsContent value="patient-result">Change your password here.</TabsContent>
                     <TabsContent value="patient-monthly">Change your password here.</TabsContent>
                     </Tabs>
             </div>
 
-            <div className="flex flex-col items-center gap-5 mt-10 ">
-                <div className="p-6 bg-gray-300 w-[600px] rounded">
-                    <h2 className="text-center font-bold bg-gray-50 py-2">登録患者一覧</h2>
-                    <Table>
-                        <TableCaption>患者が登録されていません</TableCaption>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[80px] text-center">患者ID</TableHead>
-                                <TableHead className="w-[100px]">患者氏名</TableHead>
-                                <TableHead colSpan={2}>診断</TableHead>
-                                {/* <TableHead className="text-right">編集</TableHead> */}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                                {/* ここでmapメソッドで出力 */}
-                                { patients.map( (patient) => (
-                            <TableRow key={patient.id}>
-                                <TableCell className="patient-id text-center">{patient.id}</TableCell>
-                                <TableCell className="patient-name">{patient.patientname}</TableCell>
-                                <TableCell className="patient-diagnosis">
-                                    {patient.affectedside}
-                                    {patient.affectedpart}
-                                    {patient.diagnosis}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button 
-                                    className="bg-red-600 text-white rounded px-5 py-2 font-bold"
-                                    onClick={() => confirmDelete(patient.id)}
-                                    >
-                                    削除</Button>
-                                </TableCell>
-                            </TableRow>
-                                ))}
-                        </TableBody>
-                        </Table>
-
-                </div>
-            </div>
+            
         </>
     )
 }
