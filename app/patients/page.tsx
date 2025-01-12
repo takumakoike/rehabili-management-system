@@ -32,6 +32,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { redirect } from "next/dist/server/api-utils";
 
 interface Patients {
     id: number;
@@ -88,6 +89,28 @@ export default function PatientView(){
         } else {
             // リクエストが無効の場合
             console.error("患者情報の作成に失敗")
+        }
+    }
+
+    const handleDelete = (id: number) => {
+        fetch(`../api/patients/?id=${id}`, {
+            method: "DELETE",
+        })
+        .then((res) => res.json())
+        .then((data) => {
+            if(data.success){
+                setPatients((prevPatients) => prevPatients.filter((patient) => patient.id !== id));
+            } else{
+                console.error("削除失敗", data.error)
+            }
+        })
+        .catch((err) => console.error(err))
+    }
+
+    const confirmDelete = (id: number) => {
+        if (window.confirm('このユーザーを削除しますか？')) {
+            handleDelete(id);
+            window.location.href = "/patients"
         }
     }
 
@@ -197,19 +220,20 @@ export default function PatientView(){
                 <div className="p-6 bg-gray-300 w-[600px] rounded">
                     <h2 className="text-center font-bold bg-gray-50 py-2">登録患者一覧</h2>
                     <Table>
-                        <TableCaption>A list of your recent invoices.</TableCaption>
+                        <TableCaption>患者が登録されていません</TableCaption>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[80px] text-center">患者ID</TableHead>
                                 <TableHead className="w-[100px]">患者氏名</TableHead>
-                                <TableHead>診断</TableHead>
-                                <TableHead className="text-right">編集・削除</TableHead>
+                                <TableHead colSpan={2}>診断</TableHead>
+                                {/* <TableHead className="text-right">編集</TableHead> */}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                                 {/* ここでmapメソッドで出力 */}
                                 { patients.map( (patient) => (
                             <TableRow key={patient.id}>
-
+                                <TableCell className="patient-id text-center">{patient.id}</TableCell>
                                 <TableCell className="patient-name">{patient.patientname}</TableCell>
                                 <TableCell className="patient-diagnosis">
                                     {patient.affectedside}
@@ -217,8 +241,11 @@ export default function PatientView(){
                                     {patient.diagnosis}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <p>編集</p>
-                                    <p>削除</p>
+                                    <Button 
+                                    className="bg-red-600 text-white rounded px-5 py-2 font-bold"
+                                    onClick={() => confirmDelete(patient.id)}
+                                    >
+                                    削除</Button>
                                 </TableCell>
                             </TableRow>
                                 ))}

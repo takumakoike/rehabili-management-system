@@ -71,3 +71,28 @@ export async function POST(request:NextRequest) {
         })
     })
 }
+
+// DELETE関数で患者テーブルにある情報を削除する
+export async function DELETE(request: NextRequest){
+    console.log(request.body);
+    const {searchParams} = new URL(request.url);
+    const id = searchParams.get("id");
+
+    return new Promise<Response>((resolve, reject) => {
+        if(!id){
+            resolve(new Response(JSON.stringify({error: "IDが含まれていません"}), {status: 400}));
+            return;
+        }
+
+        db.run("DELETE FROM patients WHERE id = ?", [id], function(err){
+            if(err){
+                reject(new Response(JSON.stringify({error: "データベースのエラーです"}), {status: 500}))
+            } else {
+                resolve(new Response(JSON.stringify({success: true}), {status: 200}))
+            }
+        })
+        
+
+    }) 
+
+}
