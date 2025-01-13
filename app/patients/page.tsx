@@ -21,7 +21,7 @@ import {
 import {
     Card,
     CardContent,
-    CardFooter,
+    // CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -32,7 +32,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { redirect } from "next/dist/server/api-utils";
 
 interface Patients {
     id: number;
@@ -51,8 +50,11 @@ export default function PatientView(){
     const [affectedpart, setAffectedpart] = useState("");
     const [diagnosis, setDiagnosis] = useState("");
     
+    // 編集時に必要
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingFormData, setEditingFormData] = useState({patientname: "" ,affectedside: "", affectedpart: "", diagnosis: ""});
 
-    // useEffect
+    // useEffectを利用して初期値
     useEffect(()=> {
         const fetchData = async () => {
             const res = await fetch("../../api/patients/");
@@ -111,6 +113,45 @@ export default function PatientView(){
         if (window.confirm('このユーザーを削除しますか？')) {
             handleDelete(id);
             window.location.href = "/patients"
+        }
+    }
+
+    // 編集モードの開始
+    const startEditing = (patient: Patients) => {
+        setEditingId(patient.id);
+        setEditingFormData({
+            patientname: patient.patientname, 
+            affectedside: patient.affectedside,
+            affectedpart: patient.affectedpart, 
+            diagnosis: patient.diagnosis
+        });
+    }
+
+    // 編集フォームの値を変更
+    const handleEditFormChange = ((e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setEditingFormData(prevData => ({...prevData,[name]: value}));
+    });
+
+    // 編集を保存
+    const saveEdit = async () => {
+        console.log("saveEditの開始")
+        const response = await fetch(`../api/patients/?id=${editingId}`, {
+            method: "PATCH",
+            headers: {
+                "Contetnt-Type": "application/json",
+            },
+            body: JSON.stringify(editingFormData)
+        })
+        console.log(response);
+        if(response.ok){
+            const updatePatient = await response.json();
+            setPatients((prevPatients) => 
+                prevPatients.map((p) => (p.id === editingId ? updatePatient : p))
+            );
+            setEditingId(null);
+        } else {
+            console.error("データの更新に失敗しました")
         }
     }
 
@@ -221,23 +262,75 @@ export default function PatientView(){
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                            {/* ここでmapメソッドで出力 */}
-                                            { patients.map( (patient) => (
-                                        <TableRow key={patient.id}>
-                                            <TableCell className="patient-id text-center">{patient.id}</TableCell>
-                                            <TableCell className="patient-name">{patient.patientname}</TableCell>
-                                            <TableCell className="patient-diagnosis">
-                                                {patient.affectedside}
-                                                {patient.affectedpart}
-                                                {patient.diagnosis}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button 
-                                                className="bg-red-600 text-white rounded px-5 py-2 font-bold"
-                                                onClick={() => confirmDelete(patient.id)}
-                                                >
-                                                削除</Button>
-                                            </TableCell>
+                                        {/* ここでmapメソッドで出力 */}
+                                        { patients.map( (patient) => (
+                                            <TableRow key={patient.id}>
+                                            {/* 編集モードのとき */}
+                                            {editingId === patient.id ? (
+                                                <>
+                                                    <TableCell className="patient-id text-center" aria-disabled>{patient.id}</TableCell>
+                                                    <TableCell className="patient-name">
+                                                        <input 
+                                                        type="text"
+                                                        value={editingFormData.patientname}
+                                                        onChange={handleEditFormChange}                                                        
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="patient-diagnosis flex flex-col gap-2">
+                                                        <input 
+                                                        className=""
+                                                        type="text" 
+                                                        name="patient-affectedside"
+                                                        value={editingFormData.affectedside}
+                                                        onChange={handleEditFormChange}
+                                                        />
+                                                        <input 
+                                                        type="text" 
+                                                        name="patient-affectedpart"
+                                                        value={editingFormData.affectedpart}
+                                                        onChange={handleEditFormChange}
+                                                        />
+                                                        <input 
+                                                        type="text" 
+                                                        name="patient-diagnosis"
+                                                        value={editingFormData.diagnosis}
+                                                        onChange={handleEditFormChange}
+                                                        />
+                                                        
+                                                    </TableCell>
+                                                    <TableCell className="flex justify-end gap-4">
+                                                        <Button 
+                                                        className="bg-green-600 text-white rounded px-5 py-2 font-bold"
+                                                        onClick={saveEdit}
+                                                        >
+                                                        保存</Button>
+                                                    </TableCell>
+                                                </>
+                                                
+                                            ) : (
+                                            // 編集モードではない時
+                                                <>
+                                                    <TableCell className="patient-id text-center">{patient.id}</TableCell>
+                                                    <TableCell className="patient-name text-center">{patient.patientname}</TableCell>
+                                                    <TableCell className="patient-diagnosis">
+                                                            {patient.affectedside}
+                                                            {patient.affectedpart}
+                                                            {patient.diagnosis}
+                                                    </TableCell>
+                                                    <TableCell className="flex justify-end gap-4">
+                                                        <Button 
+                                                        className="bg-green-600 text-white rounded px-5 py-2 font-bold"
+                                                        onClick={() => startEditing(patient)}
+                                                        >
+                                                        編集</Button>
+                                                        <Button 
+                                                        className="bg-red-600 text-white rounded px-5 py-2 font-bold"
+                                                        onClick={() => confirmDelete(patient.id)}
+                                                        >
+                                                        削除</Button>
+                                                    </TableCell>
+                                                    </>
+                                                )}
                                         </TableRow>
                                             ))}
                                     </TableBody>
