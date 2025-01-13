@@ -44,6 +44,7 @@ interface Patients {
 
 
 export default function PatientView(){
+
     const [patients, setPatients] = useState<Patients[]>([]);
     const [patientname, setPatientname] = useState("");
     const [affectedside, setAffectedside] = useState("");
@@ -53,21 +54,6 @@ export default function PatientView(){
     // 編集時に必要
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editingFormData, setEditingFormData] = useState({patientname: "" ,affectedside: "", affectedpart: "", diagnosis: ""});
-
-    // useEffectを利用して初期値
-    useEffect(()=> {
-        const fetchData = async () => {
-            try{
-
-                const res = await fetch("../../api/patients/");
-                const data = await res.json();
-                setPatients(data);
-            } catch(e) {
-                console.error(e);
-            }
-        };
-        fetchData();
-    }, [])
 
     // フォーム送信を行った時のアクション
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -124,7 +110,8 @@ export default function PatientView(){
     // 編集モードの開始
     const startEditing = (patient: Patients) => {
         setEditingId(patient.id);
-        setEditingFormData({
+        setEditingFormData(
+            {
             patientname: patient.patientname, 
             affectedside: patient.affectedside,
             affectedpart: patient.affectedpart, 
@@ -135,13 +122,13 @@ export default function PatientView(){
     // 編集フォームの値を変更
     const handleEditFormChange = ((e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
-        setEditingFormData(prevData => ({...prevData,[name]: value}));
+        setEditingFormData((prevData) => ({...prevData,[name]: value}));
     });
 
     // 編集を保存
     const saveEdit = async () => {
-        console.log("saveEditの開始")
         try{
+            console.log("saveEditの開始")
             const response = await fetch(`../api/patients/?id=${editingId}`, {
                 method: "PATCH",
                 headers: {
@@ -149,20 +136,62 @@ export default function PatientView(){
                 },
                 body: JSON.stringify(editingFormData)
             });
-            console.log(response);
+            console.log("レスポンスを受信:",response);
+
             if(response.ok){
                 const updatePatient = await response.json();
+
+                console.log("editingId", editingId)
                 setPatients(prevPatients => 
-                    prevPatients.map((p) => (p.id === editingId ? updatePatient : p))
-            );
-            setEditingId(null);
-        } else {
-            console.error("データの更新に失敗しました")
+                    (prevPatients.map(p => (p.id === editingId ? updatePatient : p)))
+                );
+                setEditingId(null);
+                console.log("editingId", editingId)
+                
+                // setPatientname("");
+                setEditingFormData({
+                    patientname: "",
+                    affectedside: "",
+                    affectedpart: "",
+                    diagnosis: "",
+                })
+                // setPatients()
+                
+
+                console.log(typeof editingFormData)
+                console.log("saveEditを終了します：", editingFormData)
+                console.log(patients)
+            } else {
+                console.error("データの更新に失敗しました")
+            }
+        } catch(error) {
+            console.error("更新中にエラーが発生しました：", error)
         }
-    } catch(error) {
-        console.error("更新中にエラーが発生しました：", error)
     }
-    }
+
+    // useEffectを利用して初期値
+    useEffect(()=> {
+        const fetchData = async () => {
+            try{
+
+                const res = await fetch("../../api/patients/");
+                console.log("getリクエスト2")
+
+                if(!res.ok){
+                    throw new Error("データの取得に失敗しました")
+                }
+                const data = await res.json();
+                if(Array.isArray(data)){
+                    setPatients(data);
+                } else {
+                    console.error("予期しないデータ形式：", data)
+                }
+            } catch(e) {
+                console.error("データ取得エラー：",e);
+            }
+        };
+        fetchData();
+    }, [])
 
     return (
         <>
@@ -273,11 +302,12 @@ export default function PatientView(){
                                     <TableBody>
                                         {/* ここでmapメソッドで出力 */}
                                         { patients.map( (patient) => (
-                                            <TableRow key={`rows-${patient.id}`}>
+                                            <TableRow key={`patient${patient.id}`}>
                                             {editingId === patient.id ? (
                                                 <>
+                                                {console.log(patient)}
                                                     <TableCell className="patient-id text-center" aria-disabled key={`id-${patient.id}`}>{patient.id}</TableCell>
-                                                    <TableCell className="patient-name"key={`name-${patient.id}`}>
+                                                    <TableCell className="patient-name">
                                                         <input 
                                                         type="text"
                                                         name="patientname"
