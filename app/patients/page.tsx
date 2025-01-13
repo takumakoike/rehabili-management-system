@@ -44,6 +44,7 @@ interface Patients {
 
 
 export default function PatientView(){
+
     const [patients, setPatients] = useState<Patients[]>([]);
     const [patientname, setPatientname] = useState("");
     const [affectedside, setAffectedside] = useState("");
@@ -53,16 +54,6 @@ export default function PatientView(){
     // 編集時に必要
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editingFormData, setEditingFormData] = useState({patientname: "" ,affectedside: "", affectedpart: "", diagnosis: ""});
-
-    // useEffectを利用して初期値
-    useEffect(()=> {
-        const fetchData = async () => {
-            const res = await fetch("../../api/patients/");
-            const data = await res.json();
-            setPatients(data);
-        };
-        fetchData();
-    }, [])
 
     // フォーム送信を行った時のアクション
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -119,7 +110,8 @@ export default function PatientView(){
     // 編集モードの開始
     const startEditing = (patient: Patients) => {
         setEditingId(patient.id);
-        setEditingFormData({
+        setEditingFormData(
+            {
             patientname: patient.patientname, 
             affectedside: patient.affectedside,
             affectedpart: patient.affectedpart, 
@@ -130,30 +122,76 @@ export default function PatientView(){
     // 編集フォームの値を変更
     const handleEditFormChange = ((e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
-        setEditingFormData(prevData => ({...prevData,[name]: value}));
+        setEditingFormData((prevData) => ({...prevData,[name]: value}));
     });
 
     // 編集を保存
     const saveEdit = async () => {
-        console.log("saveEditの開始")
-        const response = await fetch(`../api/patients/?id=${editingId}`, {
-            method: "PATCH",
-            headers: {
-                "Contetnt-Type": "application/json",
-            },
-            body: JSON.stringify(editingFormData)
-        })
-        console.log(response);
-        if(response.ok){
-            const updatePatient = await response.json();
-            setPatients((prevPatients) => 
-                prevPatients.map((p) => (p.id === editingId ? updatePatient : p))
-            );
-            setEditingId(null);
-        } else {
-            console.error("データの更新に失敗しました")
+        try{
+            console.log("saveEditの開始")
+            const response = await fetch(`../api/patients/?id=${editingId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(editingFormData)
+            });
+            console.log("レスポンスを受信:",response);
+
+            if(response.ok){
+                const updatePatient = await response.json();
+
+                console.log("editingId", editingId)
+                setPatients(prevPatients => 
+                    (prevPatients.map(p => (p.id === editingId ? updatePatient : p)))
+                );
+                setEditingId(null);
+                console.log("editingId", editingId)
+                
+                // setPatientname("");
+                setEditingFormData({
+                    patientname: "",
+                    affectedside: "",
+                    affectedpart: "",
+                    diagnosis: "",
+                })
+                // setPatients()
+                
+
+                console.log(typeof editingFormData)
+                console.log("saveEditを終了します：", editingFormData)
+                console.log(patients)
+            } else {
+                console.error("データの更新に失敗しました")
+            }
+        } catch(error) {
+            console.error("更新中にエラーが発生しました：", error)
         }
     }
+
+    // useEffectを利用して初期値
+    useEffect(()=> {
+        const fetchData = async () => {
+            try{
+
+                const res = await fetch("../../api/patients/");
+                console.log("getリクエスト2")
+
+                if(!res.ok){
+                    throw new Error("データの取得に失敗しました")
+                }
+                const data = await res.json();
+                if(Array.isArray(data)){
+                    setPatients(data);
+                } else {
+                    console.error("予期しないデータ形式：", data)
+                }
+            } catch(e) {
+                console.error("データ取得エラー：",e);
+            }
+        };
+        fetchData();
+    }, [])
 
     return (
         <>
@@ -264,35 +302,36 @@ export default function PatientView(){
                                     <TableBody>
                                         {/* ここでmapメソッドで出力 */}
                                         { patients.map( (patient) => (
-                                            <TableRow key={patient.id}>
-                                            {/* 編集モードのとき */}
+                                            <TableRow key={`patient${patient.id}`}>
                                             {editingId === patient.id ? (
                                                 <>
-                                                    <TableCell className="patient-id text-center" aria-disabled>{patient.id}</TableCell>
+                                                {console.log(patient)}
+                                                    <TableCell className="patient-id text-center" aria-disabled key={`id-${patient.id}`}>{patient.id}</TableCell>
                                                     <TableCell className="patient-name">
                                                         <input 
                                                         type="text"
+                                                        name="patientname"
                                                         value={editingFormData.patientname}
-                                                        onChange={handleEditFormChange}                                                        
+                                                        onChange={handleEditFormChange}
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="patient-diagnosis flex flex-col gap-2">
+                                                    <TableCell className="patient-diagnosis flex flex-col gap-2" key={`params-${patient.id}`}>
                                                         <input 
                                                         className=""
                                                         type="text" 
-                                                        name="patient-affectedside"
+                                                        name="affectedside"
                                                         value={editingFormData.affectedside}
                                                         onChange={handleEditFormChange}
                                                         />
                                                         <input 
                                                         type="text" 
-                                                        name="patient-affectedpart"
+                                                        name="affectedpart"
                                                         value={editingFormData.affectedpart}
                                                         onChange={handleEditFormChange}
                                                         />
                                                         <input 
                                                         type="text" 
-                                                        name="patient-diagnosis"
+                                                        name="diagnosis"
                                                         value={editingFormData.diagnosis}
                                                         onChange={handleEditFormChange}
                                                         />
@@ -306,20 +345,19 @@ export default function PatientView(){
                                                         保存</Button>
                                                     </TableCell>
                                                 </>
-                                                
                                             ) : (
-                                            // 編集モードではない時
+                                                // 編集モードではない時
                                                 <>
                                                     <TableCell className="patient-id text-center">{patient.id}</TableCell>
                                                     <TableCell className="patient-name text-center">{patient.patientname}</TableCell>
                                                     <TableCell className="patient-diagnosis">
-                                                            {patient.affectedside}
-                                                            {patient.affectedpart}
-                                                            {patient.diagnosis}
+                                                        {patient.affectedside}
+                                                        {patient.affectedpart}
+                                                        {patient.diagnosis}
                                                     </TableCell>
                                                     <TableCell className="flex justify-end gap-4">
                                                         <Button 
-                                                        className="bg-green-600 text-white rounded px-5 py-2 font-bold"
+                                                        className="bg-green-600 text-white rounded px-5 py-2 font-bold hover:bg-white hover:text-green-500 hover:border"
                                                         onClick={() => startEditing(patient)}
                                                         >
                                                         編集</Button>
@@ -329,13 +367,12 @@ export default function PatientView(){
                                                         >
                                                         削除</Button>
                                                     </TableCell>
-                                                    </>
-                                                )}
+                                                </>
+                                            )}
                                         </TableRow>
-                                            ))}
+                                        ))}
                                     </TableBody>
-                                    </Table>
-
+                                </Table>
                             </div>
                         </div>
                     </TabsContent>
