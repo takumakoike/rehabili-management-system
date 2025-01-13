@@ -57,9 +57,14 @@ export default function PatientView(){
     // useEffectを利用して初期値
     useEffect(()=> {
         const fetchData = async () => {
-            const res = await fetch("../../api/patients/");
-            const data = await res.json();
-            setPatients(data);
+            try{
+
+                const res = await fetch("../../api/patients/");
+                const data = await res.json();
+                setPatients(data);
+            } catch(e) {
+                console.error(e);
+            }
         };
         fetchData();
     }, [])
@@ -136,23 +141,27 @@ export default function PatientView(){
     // 編集を保存
     const saveEdit = async () => {
         console.log("saveEditの開始")
-        const response = await fetch(`../api/patients/?id=${editingId}`, {
-            method: "PATCH",
-            headers: {
-                "Contetnt-Type": "application/json",
-            },
-            body: JSON.stringify(editingFormData)
-        })
-        console.log(response);
-        if(response.ok){
-            const updatePatient = await response.json();
-            setPatients((prevPatients) => 
-                prevPatients.map((p) => (p.id === editingId ? updatePatient : p))
+        try{
+            const response = await fetch(`../api/patients/?id=${editingId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(editingFormData)
+            });
+            console.log(response);
+            if(response.ok){
+                const updatePatient = await response.json();
+                setPatients(prevPatients => 
+                    prevPatients.map((p) => (p.id === editingId ? updatePatient : p))
             );
             setEditingId(null);
         } else {
             console.error("データの更新に失敗しました")
         }
+    } catch(error) {
+        console.error("更新中にエラーが発生しました：", error)
+    }
     }
 
     return (
@@ -264,35 +273,35 @@ export default function PatientView(){
                                     <TableBody>
                                         {/* ここでmapメソッドで出力 */}
                                         { patients.map( (patient) => (
-                                            <TableRow key={patient.id}>
-                                            {/* 編集モードのとき */}
+                                            <TableRow key={`rows-${patient.id}`}>
                                             {editingId === patient.id ? (
                                                 <>
-                                                    <TableCell className="patient-id text-center" aria-disabled>{patient.id}</TableCell>
-                                                    <TableCell className="patient-name">
+                                                    <TableCell className="patient-id text-center" aria-disabled key={`id-${patient.id}`}>{patient.id}</TableCell>
+                                                    <TableCell className="patient-name"key={`name-${patient.id}`}>
                                                         <input 
                                                         type="text"
+                                                        name="patientname"
                                                         value={editingFormData.patientname}
-                                                        onChange={handleEditFormChange}                                                        
+                                                        onChange={handleEditFormChange}
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="patient-diagnosis flex flex-col gap-2">
+                                                    <TableCell className="patient-diagnosis flex flex-col gap-2" key={`params-${patient.id}`}>
                                                         <input 
                                                         className=""
                                                         type="text" 
-                                                        name="patient-affectedside"
+                                                        name="affectedside"
                                                         value={editingFormData.affectedside}
                                                         onChange={handleEditFormChange}
                                                         />
                                                         <input 
                                                         type="text" 
-                                                        name="patient-affectedpart"
+                                                        name="affectedpart"
                                                         value={editingFormData.affectedpart}
                                                         onChange={handleEditFormChange}
                                                         />
                                                         <input 
                                                         type="text" 
-                                                        name="patient-diagnosis"
+                                                        name="diagnosis"
                                                         value={editingFormData.diagnosis}
                                                         onChange={handleEditFormChange}
                                                         />
@@ -306,20 +315,19 @@ export default function PatientView(){
                                                         保存</Button>
                                                     </TableCell>
                                                 </>
-                                                
                                             ) : (
-                                            // 編集モードではない時
+                                                // 編集モードではない時
                                                 <>
                                                     <TableCell className="patient-id text-center">{patient.id}</TableCell>
                                                     <TableCell className="patient-name text-center">{patient.patientname}</TableCell>
                                                     <TableCell className="patient-diagnosis">
-                                                            {patient.affectedside}
-                                                            {patient.affectedpart}
-                                                            {patient.diagnosis}
+                                                        {patient.affectedside}
+                                                        {patient.affectedpart}
+                                                        {patient.diagnosis}
                                                     </TableCell>
                                                     <TableCell className="flex justify-end gap-4">
                                                         <Button 
-                                                        className="bg-green-600 text-white rounded px-5 py-2 font-bold"
+                                                        className="bg-green-600 text-white rounded px-5 py-2 font-bold hover:bg-white hover:text-green-500 hover:border"
                                                         onClick={() => startEditing(patient)}
                                                         >
                                                         編集</Button>
@@ -329,13 +337,12 @@ export default function PatientView(){
                                                         >
                                                         削除</Button>
                                                     </TableCell>
-                                                    </>
-                                                )}
+                                                </>
+                                            )}
                                         </TableRow>
-                                            ))}
+                                        ))}
                                     </TableBody>
-                                    </Table>
-
+                                </Table>
                             </div>
                         </div>
                     </TabsContent>

@@ -100,17 +100,17 @@ export async function DELETE(request: NextRequest){
 
 // PATCH関数でデータの編集を行う
 export async function PATCH(request: NextRequest){
-    const {id, patientname,affectedside, affectedpart, diagnosis} = await request.json();
+    const {patientname,affectedside, affectedpart, diagnosis} = await request.json();
 
     return new Promise<Response>((resolve, reject) => {
         db.run(
             'UPDATE patients SET patientname = ?, affectedside = ?, affectedpart = ?, diagnosis = ?',
-            [id, patientname, affectedside, affectedpart, diagnosis],
+            [patientname, affectedside, affectedpart, diagnosis],
             function(err){
                 if(err){
                     reject(new Response(JSON.stringify({error: "更新しようとしましたがデータベースのエラーが発生"}), {status: 500}))
                 } else {
-                    resolve(new Response(JSON.stringify({id, patientname, affectedside, affectedpart, diagnosis}), {status: 200, headers: {"Content-Type": "application/json"}}))
+                    resolve(new Response(JSON.stringify({patientname, affectedside, affectedpart, diagnosis}), {status: 200, headers: {"Content-Type": "application/json"}}))
                 }
             }
         )
